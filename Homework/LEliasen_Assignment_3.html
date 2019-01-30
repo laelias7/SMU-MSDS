@@ -309,8 +309,25 @@ ncol(dfiv)</code></pre>
 </div>
 <div id="generate-a-count-for-each-unique-major-category-and-assign-it-to-major_count" class="section level4">
 <h4>Generate a count for each unique major category and assign it to major_count</h4>
-<pre><code>major_count&lt;-data.frame(xtabs(~dfiv$major_category))
+<pre class="r"><code>major_count&lt;-data.frame(xtabs(~dfiv$major_category))
 major_count</code></pre>
+<pre><code>##                    dfiv.major_category Freq
+## 1      Agriculture &amp; Natural Resources   10
+## 2                                 Arts    8
+## 3               Biology &amp; Life Science   14
+## 4                             Business   13
+## 5          Communications &amp; Journalism    4
+## 6              Computers &amp; Mathematics   11
+## 7                            Education   16
+## 8                          Engineering   29
+## 9                               Health   12
+## 10           Humanities &amp; Liberal Arts   15
+## 11 Industrial Arts &amp; Consumer Services    7
+## 12                   Interdisciplinary    1
+## 13                 Law &amp; Public Policy    5
+## 14                   Physical Sciences   10
+## 15            Psychology &amp; Social Work    9
+## 16                      Social Science    9</code></pre>
 </div>
 <div id="make-a-bar-plot-of-major_count" class="section level4">
 <h4>Make a bar plot of major_count</h4>

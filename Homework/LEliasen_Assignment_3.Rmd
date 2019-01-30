@@ -44,7 +44,7 @@ library(markdown)
 library(knitr)
 library(rmarkdown)
 ```
-#####*Note, I couldn't use "df" object names in rmd. It worked fine in RStudio, but for some reason, it kept generting errors in rmd.*
+#####*Note, I couldn't use "df" object names for all codes in rmd. It worked fine in RStudio, but for some reason, it kept generating errors in rmd.*
 ## TITANIC
 
 ###Count the passengers by gender and plot.
@@ -59,7 +59,7 @@ Gender
 ```
 
 
-```
+```{r gr1}
 ggplot(df) +
   geom_bar(aes(x=Sex)) + ggtitle ("Passengers by Gender")
 ```
@@ -126,7 +126,7 @@ ncol(dfiv)
 
 #### Generate a count for each unique major category and assign it to major_count
 
-```
+```{r m}
 major_count<-data.frame(xtabs(~dfiv$major_category))
 major_count
 ```
