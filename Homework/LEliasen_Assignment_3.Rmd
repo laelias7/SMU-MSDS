@@ -1,0 +1,144 @@
+---
+title: "Unit 03 assignment"
+author: "Linda Eliasen"
+date: "January 29, 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+####*Personal SMu Repository: <https://github.com/laelias7/SMU-MSDS.git>*
+
+
+## GitHub Cloning
+
+####**Clone Awesome Data Sets in GitHub**
+
+1. https://github.com/awesomedata/apd-core.git *clone with HTTPS*
+
+2. https://github.com/laelias7/awesome-public-datasets.git  *cloned to my repository*
+
+
+####**Clone in RStudio**
+
+- Repository URL: https://github.com/laelias7/awesome-public-datasets.git
+
+- Project Directory Name:  AvesomeDataSets
+
+- Create Project as subdirectory of: ~/R/Projects
+
+
+*Result*
+- linda@LAPTOP-9MV7J2V0  ~/Documents/R/Projects/Awesome DataSets (master)
+
+
+```
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(markdown)
+library(knitr)
+library(rmarkdown)
+```
+#####*Note, I couldn't use "df" object names in rmd. It worked fine in RStudio, but for some reason, it kept generting errors in rmd.*
+## TITANIC
+
+###Count the passengers by gender and plot.
+
+```{r}
+df<- read.csv("titanic.csv", header=TRUE)
+dim(df)
+```
+```{r}
+Gender<-xtabs(~df$Sex)
+Gender
+```
+
+
+```
+ggplot(df) +
+  geom_bar(aes(x=Sex)) + ggtitle ("Passengers by Gender")
+```
+
+###Use an apply function to output the means of Age, Fare and Survival.
+
+```{r means}
+age<-df$Age[!is.na(df$Age)]
+
+means <- list(Age = age, Fare = df$Fare, Survived = df$Survived)
+sapply(means, mean)
+```
+
+
+
+#SLEEP DATA
+
+###Create objects for the median Age, the minimum and maximum Duration of sleep, and the mean and standard deviation of the Rosenberg Self Esteem scale (RSES).  Change the column names to MedianAge, SelfEsteem, SE_SD, and DurationRange. Run the function and show the output.
+
+
+```{r sleep}
+sleep01<- read.csv("Sleep_data.csv", header=TRUE)
+
+#a=age, b=duration, c=RSES
+report <- function(a, b, c) {
+  mdn <- median(a, na.rm=TRUE)
+  min <- min(b, na.rm=TRUE)
+  max <- max(b, na.rm=TRUE)
+  mea <- mean(c, na.rm=TRUE)/5
+  std <- sd(c, na.rm=TRUE)/5
+  range <- max-min
+  Function <- c("MedianAge", "SelfEsteem", "SE_SD", "DurationRange")
+  report <- round(c(mdn, mea, std, range),2)
+  result <- data.frame(Function,report)
+  result
+}
+
+report(a=sleep01$Age, b=sleep01$Duration, c=sleep01$RSES)
+```
+
+
+#FIVETHIRTYEIGHT
+
+```
+data(package = "fivethirtyeight")
+dfiv<- fivethirtyeight::college_recent_grads
+```
+
+#https://fivethirtyeight.com/features/the-economic-guide-to-picking-a-college-major/
+
+
+####Get the dimensions and column names of the dataset
+```{r dfive}
+dfiv<- fivethirtyeight::college_recent_grads
+dim(dfiv)
+names(dfiv)
+```
+
+####Get the column names and column count of the dataset
+```{r2 major}
+names(dfiv)
+ncol(dfiv)
+```
+
+#### Generate a count for each unique major category and assign it to major_count
+
+```
+major_count<-data.frame(xtabs(~dfiv$major_category))
+major_count
+```
+
+####Make a bar plot of major_count
+*Error in ggplot(data = dfiv) : could not find function "ggplot"
+Calls: <Anonymous> ... handle -> withCallingHandlers -> withVisible -> eval -> eval
+I've searched everywhere how to fix this and I can't figure it out.*
+
+```
+ggplot(dfiv) + 
+  geom_bar(aes(x=major_category)) + ggtitle ("Degree Majors of Recent Graduates") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw()
+```
