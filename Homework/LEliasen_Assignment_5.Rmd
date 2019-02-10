@@ -1,0 +1,99 @@
+---
+title: "DDS - Assignment 5"
+author: "Linda Eliasen"
+date: "February 10, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(knitr)
+```
+####*Personal SMU Repository: <https://github.com/laelias7/SMU-MSDS.git>*
+
+```
+library(dplyr)
+library(tidyr)
+library(knitr)
+```
+
+##Popular Baby Names
+Import 2016 Nameset and display the structure and summary
+
+```{r}
+df <- read.csv("yob2016.csv")
+str(df)
+summary(df)
+```
+
+Name Error (ends in yyy) - finding and fixing
+
+```{r }
+grep("y{3}", df$Name, value = TRUE)
+y2016<-df[- grep("Fionayyy", df$Name),]
+```
+
+Import 2015 Nameset and format
+
+```{r }
+y2015 <- read.csv("yob2015.csv")
+names(y2015)<-c("Name","Sex","Count")
+```
+
+Anything interesting in the tail?
+These are among the least popular boys'names in 2015.  The names are very unique, but they were still choosen!
+
+```{r}
+tail(y2015)
+```
+
+Merge two data sets with inner merge
+
+```{r}
+final<-merge(y2015,y2016, by = "Name")
+final=final[,c(1,2,3,5)]
+```
+
+Add total column and sum the counts from each year
+
+```{r}
+final[,"Total"] <- NA
+final$Total <- final$Count.x + final$Count.y 
+names(final)<-c("Name","Sex","Count16","Count15","Total")
+head(final)
+
+```
+
+How many people were given popular names?
+
+```{r}
+sum(final$Total)
+```
+
+
+What are the top 10 most popular names?
+
+```{r}
+final <- final[order(-final$Total),]
+final=final[,c(1,2,5)]
+head(final,10)
+```
+
+What are the top 10 most popular girls names?
+
+```{r}
+final <- final[order(final$Sex, -final$Total),] 
+head(final,10)
+```
+
+Print the top ten girls' names and their counts to a csv file
+
+```{r}
+topgirls=final[,c(1,3)]
+topgirls<-head(topgirls,10)
+topgirls
+
+write.csv(topgirls,'topgirls.csv')
+```
