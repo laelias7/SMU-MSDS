@@ -1,0 +1,151 @@
+---
+title: "DDS - Assignment 6"
+author: "Linda Eliasen"
+date: "February 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(dataMaid)
+library(ggpubr)
+library(RColorBrewer)
+library(bindrcpp)
+```
+
+####*Personal SMU Repository: <https://github.com/laelias7/SMU-MSDS.git>*
+
+```
+library(ggplot2)
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(RColorBrewer)
+library(bindrcpp)
+```
+####Mental Health Clinics 
+
+##### We are responsible for building new VA hospitals in the mainland of the United States and are exploring healthcare facility data recorded by the U.S. Government. 
+
+This data set is a survey of every known healthcare facility that offers mental health services in the United States in 2015. *https://datafiles.samhsa.gov/study-dataset/national-mental-health-services-survey-2015-n-mhss-2015-ds0001-nid17098 *
+
+
+
+
+```{r}
+df<- read.csv("VA_Week6.csv" , header=TRUE)
+df <- data.frame(as.character(df$LST),as.numeric(df$FACILITYTYPE))
+colnames(df)<- c('State', 'FacilityType')
+```
+
+State abbreviations without their counts:
+```{r}
+state <- df %>% group_by(State)%>% select(State) %>% distinct(State)
+as.data.frame(state)
+```
+
+We are only interested in the Veterans Administration (VA) medical centers in the mainland United States (Facility type 6 in the orginal data).  See listing of counts of these centers by state.
+```{r}
+va<-data.frame(dplyr::filter(df,FacilityType=="6"))
+va<-va[-grep("AK", va$State),]
+va<-va[-grep("PR", va$State),]
+va<-va[-grep("HI", va$State),]
+
+van <-(va%>% group_by(State) %>% count(State))
+van<-as.data.frame(van)
+van 
+```
+
+Barchart of the data
+```{r}
+ggplot(van, aes(x=State, y=n, fill=State)) +
+  geom_bar(stat='identity') +
+  labs(x="State",y="Number of VA Facilities") +
+  ggtitle("VA Facilities by State") + 
+  theme(plot.title = element_text(hjust = 0.5))+ #forces centering
+  theme(legend.position='none') +
+  coord_flip() +
+  scale_x_discrete(limits = rev(van$State)) + #reorder axis
+  theme(axis.text.y = element_text(hjust=1, vjust=0.5, size=7))
+```
+
+####Cleaning and Bringing in New Features 
+##### The above graph may be somewhat misleading, as bigger states may have more hospitals, but could be more sparsely located. 
+
+Use statesize.csv to merge in square miles for each state.
+```{r}
+df<- read.csv("statesize.csv" , header=TRUE)
+colnames(df)<- c('StateName', 'SqMiles', 'State', 'Region')
+head(df)
+
+paste(van$State)
+paste(df$State)
+```
+
+There is an issue with the merging the new file with our existing data, requiring programmatic correction.  
+
+The State Size file has more states then our original file, as we only took VA Facilities in the mainland United States. To correct this,these states need to be removed.  DC is not in the file, we will need to add that in based on information from *https://en.wikipedia.org/wiki/Washington,_D.C.*
+```{r}
+df<-df[-grep("AK", df$State),]
+df<-df[-grep("HI", df$State),]
+
+dfa<-data.frame("Wash DC","68", "DC", "Northeast")
+colnames(dfa)<- c('StateName', 'SqMiles', 'State', 'Region')
+df <- rbind(df, dfa)
+```
+
+The two files can now be merged.
+```{r}
+vaf<-merge(van,df,by = "State",all.x = TRUE)
+vaf$n <- as.numeric(vaf$n)
+vaf$SqMiles <- as.numeric(vaf$SqMiles)
+```
+
+We need to calculate a new variable for VA hospitals per thousand square miles. 
+```{r}
+vaf[,"FacPkSM"] <- NA
+vaf$FacPkSM <- vaf$n/(vaf$SqMiles/1000)
+```
+
+Graph of VA hospitals per thousand square miles.
+```{r}
+ggplot(vaf, aes(x=reorder(State, -FacPkSM), y=FacPkSM, fill=Region)) + 
+  geom_bar(stat="identity") +
+  scale_fill_brewer(palette="Spectral")+
+labs(x="State",y="Ratio") +
+  ggtitle("Ratio of VA Facilities Per 1,000 Square Miles") +
+  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(axis.text.x = element_text(angle =90, hjust=1, vjust=0.5, size=8))
+```
+
+####Patterns in the data
+DC has one facility.  However, because the square miles are less than 1,000, we are getting an influential outlier when that ratio is included. We will force it to zero and rerun the graph so we can better visualize the other states' data.
+```{r}
+vaf[7, 6] = 0
+
+ggplot(vaf, aes(x=reorder(State, -FacPkSM), y=FacPkSM, fill=Region)) + 
+  geom_bar(stat="identity") +
+  scale_fill_brewer(palette="Spectral")+
+  labs(x="State",y="Ratio") +
+  ggtitle("Ratio of VA Facilities Per 1,000 Square Miles") +
+  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(axis.text.x = element_text(angle =90, hjust=1, vjust=0.5, size=6))
+```
+
+The South and MidWest regions have the most VA facilities in terms of total sites.
+
+In reviewing the data, number of facilities in each state doesn't appear to be based on state size. As you can see in the table below of the 5 largest states, the number of facilities doesn't correlate with size.
+```{r}
+top <- vaf[order(-vaf$SqMiles),]
+top=top[,c(1,2,4)]
+head(top, 5)
+```
+
+My recommendation is to look at the data in terms of overall and veteran population numbers of each state.  I would also like to go back to the original mental facility data set and see if the presence of non-VA facilities in the states impact the need for additional VA facilities. 
+
+
