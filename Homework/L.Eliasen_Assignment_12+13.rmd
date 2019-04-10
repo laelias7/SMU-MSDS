@@ -1,0 +1,135 @@
+---
+title: "Wk 12/13 Time Series"
+author: "Linda Eliasen"
+date: "April 5, 2019"
+output: html_document
+---
+*Personal SMU Repository: <https://github.com/laelias7/SMU-MSDS.git>*      
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r libraries, include=FALSE}
+library(fpp)
+library(fpp2)
+library(ggplot2)
+library(dygraphs)
+library(xts)
+library(RColorBrewer)
+```
+
+library (fpp) (fpp2) (dygraphs) (xts) (RColorBrewer)
+
+
+#European Stock Markets
+<br>
+<br>
+
+###Using the DAX index from 1990 onward, create a plot and add an event line for the 1997 mini-crash.
+<br>
+```{r}
+data("EuStockMarkets")
+dax<-EuStockMarkets[,1]
+
+plot(dax, xlab = "Year", ylab = "Index Value", 
+        col="blue", main = "German Stock Indices, 1990-1999")
+        abline(v=1997, col="red")
+
+```
+
+###	Decompose the time series into its components:  trend, seasonality, random.
+<br>
+```{r}
+daxComp<-decompose(dax, type = "multiplicative")
+plot(daxComp, col="blue") +
+abline(v=1997, col="red")
+```
+
+#Temperature Data - Moorabbin Airport
+<br>
+<br>
+
+###Using the "maxtemp" data set from fpp2, run the autoplot chart feature to see what the data looks like.
+<br>
+```{r}
+data("maxtemp")
+autoplot(maxtemp)
+```
+
+###We are only concerned with information after 1990. Subset the data and predict the next five years of maximum temperatures, include a graph.
+<br>
+```{r}
+maxt = window(maxtemp, start = 1990)       
+
+fit1 = ses(maxt, h = 5) #defaults
+plot(fit1,ylab = "Max Temp - Celsius", xlab = "Year", main = "Forecasted Max Temp at Moorabbin Airport: 2017-2022")
+lines(fitted(fit1), col = "blue",  type = "o")
+```
+
+###Use damped Holt's linear trend to also predict out five years (optimal) and graph.
+<br>
+```{r}
+fit1h = holt(maxt, damped = TRUE, initial = "optimal", h = 5)
+plot(fit1h,ylab = "Max Temp - Celsius", xlab = "Year", main = "Forecasted Temp at Moorabbin Airport: 2017-2022")
+lines(fitted(fit1h), col = "blue",  type = "o")
+```
+
+###Compare the AICc and BIC of the ses and holt models.  Which model is better?
+<br>
+With a lower AICc, the SES model is the better choice for this data.
+```{r}
+fit1$model
+fit1h$model
+```
+
+###Calculate and compare the ASE of the ses and holt models.  Which model is better?
+<br>
+With an ASE of 4.46, the Holt model is better.
+```{r}
+sesASE=((sum(residuals(fit1)^2)/length(maxt)))
+sesASE
+
+holtASE=((sum(residuals(fit1h)^2)/length(maxt)))
+holtASE
+```
+
+#The Wands Choose the Wizard!
+<br>
+<br>
+
+###Read in both the Ollivander and Gregorovitch files as two different data frames.  Make necessary changes to get the data in the proper format and use the library xts to make an xts object.
+<br>
+```{r}
+greg <- read.csv("Gregorovitch.csv")
+names(greg)<-c("Year","GWands")
+greg$Year<-as.Date(greg$Year, "%m/%d/%Y")
+
+gregts<-xts(greg$GWands, order.by=greg$Year)
+
+
+olliv <- read.csv("Ollivander.csv")
+names(olliv)<-c("Year","OWands")
+olliv$Year<-as.Date(olliv$Year, "%m/%d/%Y")
+
+ollivts<-xts(olliv$OWands, order.by=olliv$Year)
+
+comb<-merge(gregts,ollivts)
+
+```
+
+###Bind the two objects together and create a dygraph. Use effective labeling, stack the graph and modify the colors, activate a range selector, use dyshading to account for Voldemort being revived and present (1995-1999), and enable highlighting.
+<br>
+```{r}
+#https://rstudio.github.io/dygraphs/gallery-range-selector.html
+
+dygraph(comb, main = "Comparison of Wands Sold", xlab = "Year", ylab = "# Sold") %>%
+  dySeries("ollivts", label = "Ollivander") %>%
+  dySeries("gregts", label = "Gregorovitch") %>%
+  #stack the graph and modify the two lines to be different colors
+  dyOptions(colors = RColorBrewer::brewer.pal(3, "BuGn"))%>%
+  #Use dyShading to illuminate approximately when Voldemort was revived
+  dyShading(from = "1995-1-1", to = "1999-1-1", color = "#CCEBD6") %>%
+  #Enable Highlighting on the graph
+  dyHighlight(highlightSeriesOpts = list(strokeWidth = 3)) %>%
+  dyRangeSelector(height = 40)
+```
+
